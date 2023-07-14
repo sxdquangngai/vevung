@@ -67,58 +67,44 @@
       return coordinates;
     }
 
-function handleFile(event) {
-  var file = event.target.files[0];
-  var extension = file.name.split('.').pop().toLowerCase();
-  var reader = new FileReader();
-  reader.onload = function (e) {
-    var contents = e.target.result;
-    var coordinates;
-    if (extension === 'txt') {
-      coordinates = parseCoordinatesFromString(contents);
-    } else if (extension === 'xlsx') {
-      var workbook = XLSX.read(contents, { type: 'binary' });
-      var worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-      coordinates = parseCoordinatesFromExcel(jsonData);
-    }
-    if (coordinates) {
-      for (var i = 0; i < coordinates.length; i++) {
-        drawPolygon(coordinates[i]);
+    function handleFile(event) {
+      var file = event.target.files[0];
+      var extension = file.name.split('.').pop().toLowerCase();
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var contents = e.target.result;
+        var coordinates;
+        if (extension === 'txt') {
+          coordinates = parseCoordinatesFromString(contents);
+        } else if (extension === 'xlsx') {
+          var workbook = XLSX.read(contents, {type: 'binary'});
+          var worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+          coordinates = parseCoordinatesFromExcel(jsonData);
+        }
+        if (coordinates) {
+          drawPolygon(coordinates);
+        } else {
+          alert('Định dạng file không hợp lệ.');
+        }
+      };
+      if (extension === 'txt') {
+        reader.readAsText(file);
+      } else if (extension === 'xlsx') {
+        reader.readAsBinaryString(file);
       }
-    } else {
-      alert('Định dạng file không hợp lệ.');
     }
-  };
-  if (extension === 'txt') {
-    reader.readAsText(file);
-  } else if (extension === 'xlsx') {
-    reader.readAsBinaryString(file);
-  }
-}
 
-function parseCoordinatesFromExcel(jsonData) {
-  var coordinates = [];
-  var currentRegion = [];
-  for (var i = 1; i < jsonData.length; i++) {
-    var vn2000Latitude = parseFloat(jsonData[i][0]);
-    var vn2000Longitude = parseFloat(jsonData[i][1]);
-    var wgs84Coordinates = convertVN2000ToWGS84(vn2000Latitude, vn2000Longitude);
-
-    if (jsonData[i][2] === 'new_polygon') {
-      if (currentRegion.length > 2) {
-        coordinates.push(currentRegion);
+    function parseCoordinatesFromExcel(jsonData) {
+      var coordinates = [];
+      for (var i = 1; i < jsonData.length; i++) {
+        var vn2000Latitude = parseFloat(jsonData[i][0]);
+        var vn2000Longitude = parseFloat(jsonData[i][1]);
+        var wgs84Coordinates = convertVN2000ToWGS84(vn2000Latitude, vn2000Longitude);
+        coordinates.push([wgs84Coordinates.latitude, wgs84Coordinates.longitude]);
       }
-      currentRegion = [];
-    } else {
-      currentRegion.push([wgs84Coordinates.latitude, wgs84Coordinates.longitude]);
+      return coordinates;
     }
-  }
-  if (currentRegion.length > 2) {
-    coordinates.push(currentRegion);
-  }
-  return coordinates;
-}
 
     function drawPolygon(coordinates) {
       if (coordinates.length > 2) {
