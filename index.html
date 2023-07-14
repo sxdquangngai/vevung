@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Vẽ Polygon từ File</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+  
+    <style>
+    #map {
+      height: 500px;
+    }
+  </style>
+</head>
+<body>
+    <div id="map" style="height: 600px;"></div>
+  <form>
+    <label for="coordinates">Nhập tọa độ:</label>
+    <br>
+    <textarea id="coordinates" rows="4" cols="50"></textarea>
+    <br>
+    <label for="file">Hoặc chọn file:</label>
+    <input type="file" id="file" accept=".txt, .xlsx" />
+    <br>
+    <button type="button" onclick="parseCoordinates()">Vẽ Polygon</button>
+    <button type="button" onclick="saveGeoJSON()">Lưu</button>
+  </form>
+
+  <script>
+    var map = L.map('map').setView([16.048, 108.219], 12);
+
+    L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=vi&x={x}&y={y}&z={z}', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    proj4.defs('EPSG:3405', '+proj=tmerc +lat_0=0 +lon_0=108 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +towgs84=-192.873,-39.382,-111.202,-0.00205,-0.0005,0.00335,0.0188 +units=m +no_defs');
+
+    function convertVN2000ToWGS84(vn2000Latitude, vn2000Longitude) {
+      var point = proj4('EPSG:3405', 'EPSG:4326', [vn2000Longitude, vn2000Latitude]);
+      return { latitude: point[1], longitude: point[0] };
+    }
+
+    var drawnItems = new L.FeatureGroup().addTo(map);
+
+    function parseCoordinates() {
+      var coordinatesInput = document.getElementById('coordinates').value;
+      var coordinates = parseCoordinatesFromString(coordinatesInput);
+      drawPolygon(coordinates);
+    }
+
+    function parseCoordinatesFromString(coordinatesString) {
+      var coordinates = [];
+      var lines = coordinatesString.split('\n');
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (line !== '') {
+          var parts = line.split(',');
+          var vn2000Latitude = parseFloat(parts[0]);
+          var vn2000Longitude = parseFloat(parts[1]);
+          var wgs84Coordinates = convertVN2000ToWGS84(vn2000Latitude, vn2000Longitude);
+          coordinates.push([wgs84Coordinates.latitude, wgs84Coordinates.longitude]);
+        }
+      }
+      return coordinates;
+    }
+
+function handleFile(event) {
+  var file = event.target.files[0];
+  var extension = file.name.split('.').pop().toLowerCase();
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    var contents = e.target.result;
+    var coordinates;
+    if (extension === 'txt') {
+      coordinates = parseCoordinatesFromString(contents);
+    } else if (extension === 'xlsx') {
+      var workbook = XLSX.read(contents, { type: 'binary' });
+      var worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      coordinates = parseCoordinatesFromExcel(jsonData);
+    }
+    if (coordinates) {
+      for (var i = 0; i < coordinates.length; i++) {
+        drawPolygon(coordinates[i]);
+      }
+    } else {
+      alert('Định dạng file không hợp lệ.');
+    }
+  };
+  if (extension === 'txt') {
+    reader.readAsText(file);
+  } else if (extension === 'xlsx') {
+    reader.readAsBinaryString(file);
+  }
+}
+
+function parseCoordinatesFromExcel(jsonData) {
+  var coordinates = [];
+  var currentRegion = [];
+  for (var i = 1; i < jsonData.length; i++) {
+    var vn2000Latitude = parseFloat(jsonData[i][0]);
+    var vn2000Longitude = parseFloat(jsonData[i][1]);
+    var wgs84Coordinates = convertVN2000ToWGS84(vn2000Latitude, vn2000Longitude);
+
+    if (jsonData[i][2] === 'new_polygon') {
+      if (currentRegion.length > 2) {
+        coordinates.push(currentRegion);
+      }
+      currentRegion = [];
+    } else {
+      currentRegion.push([wgs84Coordinates.latitude, wgs84Coordinates.longitude]);
+    }
+  }
+  if (currentRegion.length > 2) {
+    coordinates.push(currentRegion);
+  }
+  return coordinates;
+}
+
+    function drawPolygon(coordinates) {
+      if (coordinates.length > 2) {
+        var polygon = L.polygon(coordinates).addTo(drawnItems);
+        map.fitBounds(polygon.getBounds());
+      } else {
+        alert('Cần ít nhất 3 tọa độ để vẽ polygon.');
+      }
+    }
+
+    function saveGeoJSON() {
+      var geoJSON = drawnItems.toGeoJSON();
+      var blob = new Blob([JSON.stringify(geoJSON)], { type: "application/json;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = "polygon.geojson";
+      a.click();
+
+      URL.revokeObjectURL(url);
+    }
+
+    var fileInput = document.getElementById('file');
+    fileInput.addEventListener('change', handleFile);
+  </script>
+</body>
+</html>
