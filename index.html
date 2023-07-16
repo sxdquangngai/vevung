@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,27 +9,27 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dxf-writer@2.0.0/dist/dxf-writer.min.js"></script>
   <style>
-  
-#map {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
+    #map {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
 
-#form {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: white;
-  padding: 20px;
-  max-width: 400px; /* Đặt độ rộng tối đa của form */
-  margin: 0 auto; /* Đặt margin là 0 và tự căn giữa form */
-}
+    #form {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      max-width: 400px;
+      /* Đặt độ rộng tối đa của form */
+      margin: 0 auto;
+      /* Đặt margin là 0 và tự căn giữa form */
+    }
 
     /* CSS cho nút đóng */
     .close {
@@ -48,57 +47,67 @@
     }
   </style>
 </head>
+
 <body>
-  <div id="map">
-
-  
-</div>
-	
+  <div id="map"></div>
   <!-- Button để kích hiện modal -->
- 
-
+  <button type="button" onclick="showForm()">Vẽ Điểm và Vùng</button>
   <!-- Modal -->
-
-
+  <div id="myModal" class="modal">
+    <!-- Form -->
+	
+    <form id="form" style="display: none;">
+	<span class="close" onclick="hideForm()">&times;</span>
+      <label for="coordinates">Nhập tọa độ VN2000:</label>
+      <br>
+      <textarea id="coordinates" rows="4" cols="50"></textarea>
+      <br>
+      <label for="file">Hoặc chọn file Excel:</label>
+      <input type="file" id="file" accept=".xlsx" />
+      <br>
+      <!-- Nút vẽ điểm -->
+      <button type="button" onclick="drawMarker()">Vẽ Điểm</button>
+	    <!-- Nút lưu điểm dạng GeoJSON -->
  
-      <!-- Form -->
-      <form id="form">
-        <label for="coordinates">Nhập tọa độ:</label>
-        <br>
-        <textarea id="coordinates" rows="4" cols="50"></textarea>
-        <br>
-        <label for="file">Hoặc chọn file:</label>
-        <input type="file" id="file" accept=".txt, .xlsx" />
-        <br>
-        <!-- Nút vẽ polygon -->
-        <button type="button" onclick="parseCoordinates()">Vẽ Polygon</button>
-        <!-- Nút lưu GeoJSON -->
-        <button type="button" onclick="saveGeoJSON()">Lưu</button>
-        <!-- Nút lưu CAD -->
-        <button type="button" onclick="saveCAD()">Lưu CAD</button>
-		
-      </form>
 
+      <!-- Nút vẽ đường -->
+      <button type="button" onclick="drawPolyline()">Vẽ Đường</button>
+	
+      <!-- Nút vẽ vùng -->
+      <button type="button" onclick="drawPolygon()">Vẽ Vùng</button>
+      <!-- Nút đóng -->
+	    <!-- Nút lưu vùng dạng GeoJSON -->
+		<br>
+		 <button type="button" onclick="convertMarkerToGeoJSON()">Lưu Điểm</button>
+		<button type="button" onclick="convertPolylineToGeoJSON()">Lưu Đường</button>
+        <button type="button" onclick="convertPolygonsToGeoJSON()">Lưu Vùng</button>
+
+ <button type="button" onclick="resetForm()">Reset</button>
+  
+  <!-- Nút Submit -->
+  <button type="submit">Submit</button>
+      
+    </form>
   </div>
-	<script>
+  <script>
     var map = L.map('map').setView([16.048, 108.219], 12);
-map.on('click', function(event) {
-  var form = document.getElementById('form');
-  form.style.display = 'block';
-  form.style.top = event.originalEvent.clientY + 'px';
-  form.style.left = event.originalEvent.clientX + 'px';
-});
+    map.on('click', function (event) {
+      var form = document.getElementById('form');
+      form.style.display = 'block';
+      form.style.top = event.originalEvent.clientY + 'px';
+      form.style.left = event.originalEvent.clientX + 'px';
+    });
 
-map.on('dragstart', function() {
-  var form = document.getElementById('form');
-  form.style.display = 'none';
-});
+    map.on('dragstart', function () {
+      var form = document.getElementById('form');
+      form.style.display = 'none';
+    });
 
     L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=vi&x={x}&y={y}&z={z}', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
-
-      var mywms = L.tileLayer.wms("https://api-v2.meeymap.com/geoserver/v2.1/meey_map/wms", {
+	
+    var mywms = L.tileLayer.wms("https://api-v2.meeymap.com/geoserver/v2.1/meey_map/wms", {
           layers: 'meeymap%3AHT_VN',
           format: 'image/png',
           transparent: true,
@@ -109,65 +118,34 @@ map.on('dragstart', function() {
 
 
 
-    proj4.defs('EPSG:3405', '+proj=tmerc +lat_0=0 +lon_0=108 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +towgs84=-192.873,-39.382,-111.202,-0.00205,-0.0005,0.00335,0.0188 +units=m +no_defs');
 
-   function convertVN2000ToWGS84(vn2000Latitude, vn2000Longitude) {
-      var point = proj4('EPSG:3405', 'EPSG:4326', [vn2000Longitude, vn2000Latitude]);
-      return { latitude: point[1], longitude: point[0] };
-    }
 
-    var drawnItems = new L.FeatureGroup().addTo(map);
+    proj4.defs('EPSG:3405', '+proj=tmerc +lat_0=0 +lon_0=108 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +towgs84=-192.873,-39.382,-111.731,0.37795,0.79143,1.66969,5.4248,-11.8216,0.97036 +units=m +no_defs');
 
-    function parseCoordinates() {
-      var coordinatesInput = document.getElementById('coordinates').value;
-      var coordinates = parseCoordinatesFromString(coordinatesInput);
-      drawPolygon(coordinates);
-    }
+function convertVN2000ToWGS84(vn2000Latitude, vn2000Longitude) {
+  var point = proj4('EPSG:3405', 'EPSG:4326', [vn2000Longitude, vn2000Latitude]);
+  return { latitude: point[1], longitude: point[0] };
+}
 
-    function parseCoordinatesFromString(coordinatesString) {
-      var coordinates = [];
-      var lines = coordinatesString.split('\n');
-      for (var i = 0; i < lines.length; i++) {
-        var line = lines[i].trim();
-        if (line !== '') {
-          var parts = line.split(',');
-          var vn2000Latitude = parseFloat(parts[0]);
-          var vn2000Longitude = parseFloat(parts[1]);
-          var wgs84Coordinates = convertVN2000ToWGS84(vn2000Latitude, vn2000Longitude);
-          coordinates.push([wgs84Coordinates.latitude, wgs84Coordinates.longitude]);
-        }
-      }
-      return coordinates;
-    }
+// Lưu các điểm và đường đã vẽ
+var drawnMarker = new L.FeatureGroup().addTo(map);
+var drawnPolyline = new L.FeatureGroup().addTo(map);
+var drawnPolygons = new L.FeatureGroup().addTo(map);
 
-function handleFile(event) {
-  var file = event.target.files[0];
-  var extension = file.name.split('.').pop().toLowerCase();
-  var reader = new FileReader();
-  reader.onload = function (e) {
-    var contents = e.target.result;
-    var coordinates;
-    if (extension === 'txt') {
-      coordinates = parseCoordinatesFromString(contents);
-    } else if (extension === 'xlsx') {
-      var workbook = XLSX.read(contents, { type: 'binary' });
-      var worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-      coordinates = parseCoordinatesFromExcel(jsonData);
+function parseCoordinatesFromString(coordinatesString) {
+  var coordinates = [];
+  var lines = coordinatesString.split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (line !== '') {
+      var parts = line.split(',');
+      var vn2000Latitude = parseFloat(parts[0]);
+      var vn2000Longitude = parseFloat(parts[1]);
+      var wgs84Coordinates = convertVN2000ToWGS84(vn2000Latitude, vn2000Longitude);
+      coordinates.push([wgs84Coordinates.latitude, wgs84Coordinates.longitude]);
     }
-    if (coordinates) {
-      for (var i = 0; i < coordinates.length; i++) {
-        drawPolygon(coordinates[i]);
-      }
-    } else {
-      alert('Định dạng file không hợp lệ.');
-    }
-  };
-  if (extension === 'txt') {
-    reader.readAsText(file);
-  } else if (extension === 'xlsx') {
-    reader.readAsBinaryString(file);
   }
+  return coordinates;
 }
 
 function parseCoordinatesFromExcel(jsonData) {
@@ -178,7 +156,7 @@ function parseCoordinatesFromExcel(jsonData) {
     var vn2000Longitude = parseFloat(jsonData[i][1]);
     var wgs84Coordinates = convertVN2000ToWGS84(vn2000Latitude, vn2000Longitude);
 
-    if (jsonData[i][2] === 'new_polygon') {
+    if (jsonData[i][2] === 'new_diem') {
       if (currentRegion.length > 2) {
         coordinates.push(currentRegion);
       }
@@ -193,37 +171,167 @@ function parseCoordinatesFromExcel(jsonData) {
   return coordinates;
 }
 
-    function drawPolygon(coordinates) {
-      if (coordinates.length > 2) {
-        var polygon = L.polygon(coordinates, { fillColor: 'blue', color: 'red' }).addTo(drawnItems);
-        map.fitBounds(polygon.getBounds());
-      } else {
-        alert('Cần ít nhất 3 tọa độ để vẽ polygon.');
+function drawMarker() {
+  var coordinatesInput = document.getElementById('coordinates').value;
+  var coordinates = parseCoordinatesFromString(coordinatesInput);
+  if (coordinates.length > 0) {
+    for (var i = 0; i < coordinates.length; i++) {
+      var marker = L.marker(coordinates[i]).addTo(drawnMarker);
+    }
+    map.fitBounds(drawnMarker.getBounds());
+  }
+  
+  // Add code to handle Excel file upload
+  var fileInput = document.getElementById('uploadFile');
+  var file = fileInput.files[0];
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var data = new Uint8Array(e.target.result);
+    var workbook = XLSX.read(data, {type: 'array'});
+    var worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    var jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+    var excelCoordinates = extractCoordinatesFromExcel(jsonData);
+
+    if (excelCoordinates.length > 0) {
+      for (var i = 0; i < excelCoordinates.length; i++) {
+        var marker = L.marker(excelCoordinates[i]).addTo(drawnMarker);
       }
+      map.fitBounds(drawnMarker.getBounds());
     }
+  };
 
-    function saveGeoJSON() {
-      var geoJSON = drawnItems.toGeoJSON();
-      var blob = new Blob([JSON.stringify(geoJSON)], { type: "application/json;charset=utf-8" });
-      var url = URL.createObjectURL(blob);
+  reader.readAsArrayBuffer(file);
+}
 
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = "polygon.geojson";
-      a.click();
 
-      URL.revokeObjectURL(url);
+
+function drawPolyline() {
+    var coordinatesInput = document.getElementById('coordinates').value;
+  var coordinates = parseCoordinatesFromString(coordinatesInput);
+  if (coordinates.length > 2) {
+    var polyline = L.polyline(coordinates).addTo(drawnPolyline);
+    map.fitBounds(polyline.getBounds());
+  } 
+  
+  var fileInput = document.getElementById('file');
+  if (fileInput.files.length > 0) {
+    var file = fileInput.files[0];
+    var extension = file.name.split('.').pop().toLowerCase();
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var contents = e.target.result;
+      var coordinates;
+      if (extension === 'xlsx') {
+        var workbook = XLSX.read(contents, { type: 'binary' });
+        var worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        coordinates = parseCoordinatesFromExcel(jsonData);
+      }
+      if (coordinates && coordinates.length > 1) {
+        var polyline = L.polyline(coordinates).addTo(drawnPolyline);
+        map.fitBounds(polyline.getBounds());
+      } else {
+        alert('Định dạng file không hợp lệ hoặc cần ít nhất 2 tọa độ để vẽ đường.');
+      }
+    };
+    if (extension === 'xlsx') {
+      reader.readAsBinaryString(file);
+    } else {
+      alert('Định dạng file không hợp lệ.');
     }
+  } 
+}
 
-    var fileInput = document.getElementById('file');
-    fileInput.addEventListener('change', handleFile);
+function drawPolygon() {
+  var coordinatesInput = document.getElementById('coordinates').value;
+  var coordinates = parseCoordinatesFromString(coordinatesInput);
+  if (coordinates.length > 2) {
+    var polygon = L.polygon(coordinates, { fillColor: 'blue', color: 'red' }).addTo(drawnPolygons);
+    map.fitBounds(polygon.getBounds());
+  } 
+  var fileInput = document.getElementById('file');
+  if (fileInput.files.length > 0) {
+    var file = fileInput.files[0];
+    var extension = file.name.split('.').pop().toLowerCase();
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var contents = e.target.result;
+      var coordinates;
+      if (extension === 'xlsx') {
+        var workbook = XLSX.read(contents, { type: 'binary' });
+        var worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        coordinates = parseCoordinatesFromExcel(jsonData);
+      }
+      if (coordinates && coordinates.length > 1) {
+        var polygon = L.polygon(coordinates, { fillColor: 'blue', color: 'red' }).addTo(drawnPolygons);
+	        map.fitBounds(polygon.getBounds());
+      } else {
+        alert('Định dạng file không hợp lệ hoặc cần ít nhất 2 tọa độ để vẽ đường.');
+      }
+    };
+    if (extension === 'xlsx') {
+      reader.readAsBinaryString(file);
+    } else {
+      alert('Định dạng file không hợp lệ.');
+    }
+  } 
+}
 
-	
-	
-  </script>
 
 
 
 
+function showForm() {
+  var form = document.getElementById('form');
+  form.style.display = 'block';
+}
+
+function hideForm() {
+  var form = document.getElementById('form');
+  form.style.display = 'none';
+}
+
+
+
+
+
+
+
+function saveFile(data, filename) {
+  var blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
+  saveAs(blob, filename);
+}
+
+// Hàm để chuyển đổi dữ liệu vẽ điểm sang định dạng GeoJSON
+function convertMarkerToGeoJSON() {
+  var geojsonData = drawnMarker.toGeoJSON();
+  var data = JSON.stringify(geojsonData);
+  saveFile(data, 'points.geojson');
+}
+
+// Hàm để chuyển đổi dữ liệu vẽ đường sang định dạng GeoJSON
+function convertPolylineToGeoJSON() {
+  var geojsonData = drawnPolyline.toGeoJSON();
+  var data = JSON.stringify(geojsonData);
+  saveFile(data, 'polyline.geojson');
+}
+
+// Hàm để chuyển đổi dữ liệu vẽ vùng sang định dạng GeoJSON
+
+
+function convertPolygonsToGeoJSON() {
+  var geojsonData = drawnPolygons.toGeoJSON();
+  var data = JSON.stringify(geojsonData);
+  saveFile(data, 'polygons.geojson');
+}
+
+function resetForm() {
+  document.getElementById("form").reset();
+}
+</script>
 </body>
+
 </html>
+
