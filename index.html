@@ -24,13 +24,14 @@
       left: 50%;
       transform: translate(-50%, -50%);
       background-color: white;
-      padding: 20px;
+      padding: 10px;
       max-width: 200px;
       /* Đặt độ rộng tối đa của form */
       margin: 0 auto;
       /* Đặt margin là 0 và tự căn giữa form */
 	    button {
-    margin-right: 10px;
+    margin-right: 5px;
+	
   }
     }
 
@@ -59,18 +60,15 @@
 	  <button type="submit">Submit</button> 
 	  <button type="button" onclick="resetForm()">Reset</button>
       <label for="coordinates"></label>
-	        <br>
       <textarea id="coordinates" rows="4" cols="25"></textarea>
-      <br>
       <label for="file">Hoặc chọn file Excel:</label>
       <input type="file" id="file" accept=".xlsx" />
-
-      <div><span style="display: inline;"> <button type="button" onclick="drawMarker()">Vẽ điểm</button>
-	   <button type="button" onclick="convertMarkerToGeoJSON()">Lưu file</button></span></div>
-         <div><span style="display: inline;"> <button type="button" onclick="drawPolyline()">Vẽ đường</button>
-			<button type="button" onclick="convertPolylineToGeoJSON()">Lưu file</button></span></div>
-         <div><span style="display: inline;"> <button type="button" onclick="drawPolygon()">Vẽ vùng</button>
-	     <button type="button" onclick="convertPolygonsToGeoJSON()">Lưu file</button></span></div>
+     <p style="margin-bottom:2px"><button type="button" onclick="drawMarker()">Vẽ điểm</button>
+	  <button type="button" onclick="convertMarkerToGeoJSON()">Lưu file</button></p>
+     <p style="margin-bottom:2px"><button type="button" onclick="drawPolyline()">Vẽ đường</button>
+		<button type="button" onclick="convertPolylineToGeoJSON()">Lưu file</button></p>
+    <p style="margin-bottom:2px"> <button type="button" onclick="drawPolygon()">Vẽ vùng</button>
+	    <button type="button" onclick="convertPolygonsToGeoJSON()">Lưu file</button></p>
   
     </form>
   </div>
