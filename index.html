@@ -268,7 +268,7 @@ function drawPolygon() {
         var polygon = L.polygon(coordinates, { fillColor: 'blue', color: 'red' }).addTo(drawnPolygons);
 	        map.fitBounds(polygon.getBounds());
       } else {
-        alert('Định dạng file không hợp lệ hoặc cần ít nhất 2 tọa độ để vẽ đường.');
+        alert('Định dạng file không hợp lệ hoặc cần ít nhất 3 tọa độ để vẽ vùng.');
       }
     };
     if (extension === 'xlsx') {
