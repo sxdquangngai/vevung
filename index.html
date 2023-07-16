@@ -1,44 +1,117 @@
 <!DOCTYPE html>
 <html>
+
+
 <head>
-  <title>Vẽ Polygon từ File</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dxf-writer@2.0.0/dist/dxf-writer.min.js"></script>
+  <style>
   
-    <style>
-    #map {
-      height: 500px;
+#map {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#form {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 20px;
+  max-width: 400px; /* Đặt độ rộng tối đa của form */
+  margin: 0 auto; /* Đặt margin là 0 và tự căn giữa form */
+}
+
+    /* CSS cho nút đóng */
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
-    <div id="map" style="height: 600px;"></div>
-  <form>
-    <label for="coordinates">Nhập tọa độ:</label>
-    <br>
-    <textarea id="coordinates" rows="4" cols="50"></textarea>
-    <br>
-    <label for="file">Hoặc chọn file:</label>
-    <input type="file" id="file" accept=".txt, .xlsx" />
-    <br>
-    <button type="button" onclick="parseCoordinates()">Vẽ Polygon</button>
-    <button type="button" onclick="saveGeoJSON()">Lưu</button>
-  </form>
+  <div id="map">
 
-  <script>
+  
+</div>
+	
+  <!-- Button để kích hiện modal -->
+ 
+
+  <!-- Modal -->
+
+
+ 
+      <!-- Form -->
+      <form id="form">
+        <label for="coordinates">Nhập tọa độ:</label>
+        <br>
+        <textarea id="coordinates" rows="4" cols="50"></textarea>
+        <br>
+        <label for="file">Hoặc chọn file:</label>
+        <input type="file" id="file" accept=".txt, .xlsx" />
+        <br>
+        <!-- Nút vẽ polygon -->
+        <button type="button" onclick="parseCoordinates()">Vẽ Polygon</button>
+        <!-- Nút lưu GeoJSON -->
+        <button type="button" onclick="saveGeoJSON()">Lưu</button>
+        <!-- Nút lưu CAD -->
+        <button type="button" onclick="saveCAD()">Lưu CAD</button>
+		
+      </form>
+
+  </div>
+	<script>
     var map = L.map('map').setView([16.048, 108.219], 12);
+map.on('click', function(event) {
+  var form = document.getElementById('form');
+  form.style.display = 'block';
+  form.style.top = event.originalEvent.clientY + 'px';
+  form.style.left = event.originalEvent.clientX + 'px';
+});
+
+map.on('dragstart', function() {
+  var form = document.getElementById('form');
+  form.style.display = 'none';
+});
 
     L.tileLayer('https://mt1.google.com/vt/lyrs=y&hl=vi&x={x}&y={y}&z={z}', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
 
+      var mywms = L.tileLayer.wms("https://api-v2.meeymap.com/geoserver/v2.1/meey_map/wms", {
+          layers: 'meeymap%3AHT_VN',
+          format: 'image/png',
+          transparent: true,
+          version: '1.1.1',
+          attribution: "country layer"
+      });
+      mywms.addTo(map);
+
+
+
     proj4.defs('EPSG:3405', '+proj=tmerc +lat_0=0 +lon_0=108 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +towgs84=-192.873,-39.382,-111.202,-0.00205,-0.0005,0.00335,0.0188 +units=m +no_defs');
 
-    function convertVN2000ToWGS84(vn2000Latitude, vn2000Longitude) {
+   function convertVN2000ToWGS84(vn2000Latitude, vn2000Longitude) {
       var point = proj4('EPSG:3405', 'EPSG:4326', [vn2000Longitude, vn2000Latitude]);
       return { latitude: point[1], longitude: point[0] };
     }
@@ -122,7 +195,7 @@ function parseCoordinatesFromExcel(jsonData) {
 
     function drawPolygon(coordinates) {
       if (coordinates.length > 2) {
-        var polygon = L.polygon(coordinates).addTo(drawnItems);
+        var polygon = L.polygon(coordinates, { fillColor: 'blue', color: 'red' }).addTo(drawnItems);
         map.fitBounds(polygon.getBounds());
       } else {
         alert('Cần ít nhất 3 tọa độ để vẽ polygon.');
@@ -144,6 +217,13 @@ function parseCoordinatesFromExcel(jsonData) {
 
     var fileInput = document.getElementById('file');
     fileInput.addEventListener('change', handleFile);
+
+	
+	
   </script>
+
+
+
+
 </body>
 </html>
