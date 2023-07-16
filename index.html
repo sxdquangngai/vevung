@@ -25,10 +25,13 @@
       transform: translate(-50%, -50%);
       background-color: white;
       padding: 20px;
-      max-width: 400px;
+      max-width: 200px;
       /* Đặt độ rộng tối đa của form */
       margin: 0 auto;
       /* Đặt margin là 0 và tự căn giữa form */
+	    button {
+    margin-right: 10px;
+  }
     }
 
     /* CSS cho nút đóng */
@@ -50,47 +53,29 @@
 
 <body>
   <div id="map"></div>
-  <!-- Button để kích hiện modal -->
-  <button type="button" onclick="showForm()">Vẽ Điểm và Vùng</button>
-  <!-- Modal -->
-  <div id="myModal" class="modal">
-    <!-- Form -->
-	
+
     <form id="form" style="display: none;">
 	<span class="close" onclick="hideForm()">&times;</span>
-      <label for="coordinates">Nhập tọa độ VN2000:</label>
-      <br>
-      <textarea id="coordinates" rows="4" cols="50"></textarea>
+	  <button type="submit">Submit</button> 
+	  <button type="button" onclick="resetForm()">Reset</button>
+      <label for="coordinates"></label>
+	        <br>
+      <textarea id="coordinates" rows="4" cols="25"></textarea>
       <br>
       <label for="file">Hoặc chọn file Excel:</label>
       <input type="file" id="file" accept=".xlsx" />
-      <br>
-      <!-- Nút vẽ điểm -->
-      <button type="button" onclick="drawMarker()">Vẽ Điểm</button>
-	    <!-- Nút lưu điểm dạng GeoJSON -->
- 
 
-      <!-- Nút vẽ đường -->
-      <button type="button" onclick="drawPolyline()">Vẽ Đường</button>
-	
-      <!-- Nút vẽ vùng -->
-      <button type="button" onclick="drawPolygon()">Vẽ Vùng</button>
-      <!-- Nút đóng -->
-	    <!-- Nút lưu vùng dạng GeoJSON -->
-		<br>
-		 <button type="button" onclick="convertMarkerToGeoJSON()">Lưu Điểm</button>
-		<button type="button" onclick="convertPolylineToGeoJSON()">Lưu Đường</button>
-        <button type="button" onclick="convertPolygonsToGeoJSON()">Lưu Vùng</button>
-
- <button type="button" onclick="resetForm()">Reset</button>
+      <div><span style="display: inline;"> <button type="button" onclick="drawMarker()">Vẽ điểm</button>
+	   <button type="button" onclick="convertMarkerToGeoJSON()">Lưu file</button></span></div>
+         <div><span style="display: inline;"> <button type="button" onclick="drawPolyline()">Vẽ đường</button>
+			<button type="button" onclick="convertPolylineToGeoJSON()">Lưu file</button></span></div>
+         <div><span style="display: inline;"> <button type="button" onclick="drawPolygon()">Vẽ vùng</button>
+	     <button type="button" onclick="convertPolygonsToGeoJSON()">Lưu file</button></span></div>
   
-  <!-- Nút Submit -->
-  <button type="submit">Submit</button>
-      
     </form>
   </div>
   <script>
-    var map = L.map('map').setView([15.121016, 108.785934], 12);
+    var map = L.map('map').setView([16.048, 108.219], 12);
     map.on('click', function (event) {
       var form = document.getElementById('form');
       form.style.display = 'block';
@@ -264,11 +249,11 @@ function drawPolygon() {
         var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
         coordinates = parseCoordinatesFromExcel(jsonData);
       }
-      if (coordinates && coordinates.length > 2) {
+      if (coordinates && coordinates.length > 1) {
         var polygon = L.polygon(coordinates, { fillColor: 'blue', color: 'red' }).addTo(drawnPolygons);
 	        map.fitBounds(polygon.getBounds());
       } else {
-        alert('Định dạng file không hợp lệ hoặc cần ít nhất 3 tọa độ để vẽ vùng.');
+        alert('Định dạng file không hợp lệ hoặc cần ít nhất 2 tọa độ để vẽ đường.');
       }
     };
     if (extension === 'xlsx') {
