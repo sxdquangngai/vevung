@@ -59,8 +59,8 @@
 	<span class="close" onclick="hideForm()">&times;</span>
 	  <button type="submit">Submit</button> 
 	  <button type="button" onclick="resetForm()">Reset</button>
-      <label for="coordinates"></label>
-      <textarea id="coordinates" rows="4" cols="25"></textarea>
+      <label for="coordinates">Nhập tọa độ:</label>
+      <textarea id="coordinates" rows="4" cols="25" oninput="validateInput(this)"></textarea>
       <label for="file">Hoặc chọn file Excel:</label>
       <input type="file" id="file" accept=".xlsx" />
      <p style="margin-bottom:2px"><button type="button" onclick="drawMarker()">Vẽ điểm</button>
@@ -314,6 +314,13 @@ function resetForm() {
   document.getElementById("form").reset();
 }
 </script>
+<script>
+function validateInput(textarea) {
+  textarea.value = textarea.value.replace(/[^0-9.,]/g, ''); // Chỉ cho phép nhập số, dấu phẩy và dấu chấm
+}
+</script>
+
+	
 </body>
 
 </html>
