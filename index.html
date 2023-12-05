@@ -317,7 +317,7 @@ function resetForm() {
 </script>
 <script>
 function validateInput(textarea) {
-  textarea.value = textarea.value.replace(/[^0-9.,]/g, ''); // Chỉ cho phép nhập số, dấu phẩy và dấu chấm
+  textarea.value = textarea.value.replace(/[^0-9.,\n]/g, ''); // Chỉ cho phép nhập số, dấu phẩy, dấu chấm và ký tự xuống dòng
 }
 </script>
 
